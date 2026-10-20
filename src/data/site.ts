@@ -159,7 +159,7 @@ const brandPresets: Record<BrandPresetKey, BrandConfig> = {
 
 const brandPreset: BrandPresetKey = 'primary'
 
-export const siteConfig: SiteConfig = {
+const templateSiteConfig: SiteConfig = {
   name: 'Documentation',
   description:
     'Clear, task-focused guidance for building with the product.',
@@ -172,3 +172,17 @@ export const siteConfig: SiteConfig = {
   brandPreset,
   brandPresets,
 }
+
+// Managed by Thally Cloud onboarding.
+export const siteConfig: SiteConfig = {
+  ...templateSiteConfig,
+  name: "Unpledged",
+  description: "Run and build on Unpledged: prove an invoice is unpledged without sharing your books, and watch Canton block a double pledge. For developers evaluating Daml and Canton.",
+  repoUrl: "https://github.com/Demiladepy/unpledged-docs",
+  links: [
+    { label: "Get started", href: "/quickstart" },
+    { label: "Support", href: "https://github.com/Demiladepy/unpledged-docs/issues/new" },
+    { label: "GitHub", href: "https://github.com/Demiladepy/unpledged-docs" },
+    { label: "Changelog", href: "/changelog" },
+  ],
+};
