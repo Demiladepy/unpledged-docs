@@ -1,0 +1,204 @@
+---
+lastVerified: 2026-10-20
+title: Run Unpledged on Canton DevNet
+description: Connect Unpledged to a live Canton DevNet participant, create real contracts with the ledger scripts, and verify that lenders cannot see invoice data.
+---
+
+The [quickstart](/quickstart) runs on mock data. This guide connects the same
+app to a real Canton DevNet participant. When you finish, every button in the
+app submits a real command, and you will have verified from the command line
+that Lender A's view of a financing transaction contains no invoice data.
+
+Allow about 20 minutes.
+
+## Before you begin
+
+- You finished the [quickstart](/quickstart) and the app runs in mock mode.
+- You have **client credentials for a Canton DevNet validator**. This project
+  is configured for the Five North DevNet sandbox, which uses the OAuth2
+  `client_credentials` grant. Your validator operator issues the client
+  secret. Unpledged cannot issue one for you.
+- You know the **ledger user ID** linked to those credentials. The project
+  defaults to user `6`.
+
+<Note type="warning" title="Keep the client secret on the server">
+  Put the secret only in `.env.server`, which is gitignored. Never give it a
+  `VITE_` prefix: Vite bundles every `VITE_` variable into JavaScript that
+  ships to the browser.
+</Note>
+
+## How live mode works
+
+The browser never calls DevNet directly and never sees the secret:
+
+1. The browser asks the dev server's `/api/token` route for a token. The
+   server exchanges `CANTON_CLIENT_SECRET` for a short-lived access token.
+2. Ledger calls go to `/api/ledger`, which Vite proxies to the JSON Ledger API
+   v2 at `https://ledger-api.validator.devnet.sandbox.fivenorth.io`. The proxy
+   avoids the CORS errors you would get by calling DevNet from the browser.
+3. Commands use the Daml package whose ID is pinned in
+   `src/ledger/packageId.ts`. That package is already uploaded to the Five
+   North validator, so you don't need to build or upload the DAR.
+
+## Connect to DevNet
+
+<Steps>
+  <Step title="Add your server-side credentials">
+    From `Unpledged/frontend`, copy the server template:
+
+    ```bash
+    cp .env.server.example .env.server
+    ```
+
+    Open `.env.server` and set `CANTON_CLIENT_SECRET`. The other values are
+    preset for the Five North sandbox:
+
+    ```bash
+    CANTON_AUTH_TOKEN_URL=https://auth.sandbox.fivenorth.io/application/o/token/
+    CANTON_CLIENT_ID=validator-devnet-m2m
+    CANTON_CLIENT_SECRET=your-secret-here
+    CANTON_TOKEN_AUDIENCE=validator-devnet-m2m
+    CANTON_TOKEN_SCOPE=daml_ledger_api
+    CANTON_LEDGER_REST_URL=https://ledger-api.validator.devnet.sandbox.fivenorth.io
+    ```
+
+    On this sandbox the audience is the same as the client ID. Use the values
+    exactly as shown.
+  </Step>
+  <Step title="Check that you can reach the ledger">
+    ```bash
+    npm run smoke:ledger
+    ```
+
+    The script exchanges your secret for a token and reads the ledger end. You
+    should see an `access_token:` prefix and a ledger offset. If it fails, fix
+    it before continuing. See [Troubleshooting](#troubleshooting).
+  </Step>
+  <Step title="Allocate the four demo parties">
+    ```bash
+    npm run allocate:parties
+    ```
+
+    This allocates `SME`, `Debtor`, `LenderA`, and `LenderB` and writes their
+    full party IDs into `.env` as `VITE_PARTY_*`. The script is safe to re-run:
+    a party that exists is reported as `already exists` and reused.
+  </Step>
+  <Step title="Let your ledger user act for those parties">
+    ```bash
+    npm run grant:act-as
+    ```
+
+    This grants `CanActAs` on all four parties to the user in
+    `VITE_CANTON_USER_ID`. Without this grant, every command fails with
+    HTTP 403.
+  </Step>
+  <Step title="Seed the ledger">
+    Create the contracts the UI expects, in this order:
+
+    ```bash
+    npm run create:invoice
+    npm run create:attestation
+    npm run create:financing
+    ```
+
+    `create:invoice` ends with `SUCCESS — first Invoice is on the live ledger`.
+    `create:attestation` ends with
+    `SUCCESS: LenderA ACS → 1+ attestation(s), 0 invoices.`
+  </Step>
+  <Step title="Switch the app to live mode">
+    In `.env`, set:
+
+    ```bash
+    VITE_USE_MOCKS=false
+    ```
+
+    Stop the dev server and start it again with `npm run dev`. Vite reads
+    `.env` only at startup. The header badge changes from **Mock mode** to
+    **Live on Canton DevNet**.
+  </Step>
+</Steps>
+
+## Run the flow against the ledger
+
+Open **Full flow** and run the five steps, as in the quickstart. Each step now
+shows a real `updateId` and `commandId` from DevNet. Step 5 still returns
+**HTTP 400 · Rejected**: the ledger refused the second pledge, which is the
+expected result.
+
+## Verify privacy from the command line
+
+The UI shows the privacy result, but you can check it directly against the
+ledger:
+
+```bash
+npm run verify:all
+```
+
+This runs two checks:
+
+| Check | What it proves | Expected output |
+| --- | --- | --- |
+| `verify:live-ui` | The active contract sets match the privacy model. | `PASS: LenderA has attestation + 0 invoices; LenderB has 0/0.` |
+| `verify:tree` | Lender A's projection of the financing transaction contains no `Invoice` node. | `PASS: zero Invoice nodes in Lender A projection (live DevNet).` |
+
+The transaction-tree check is the stronger one. An active-contract query only
+shows contracts a party is a stakeholder of. The transaction tree shows every
+node the party witnessed while the transaction ran, so it would reveal an
+`Invoice` fetch if one leaked.
+
+To run the full lifecycle on a fresh invoice number from the terminal, use:
+
+```bash
+npm run verify:demo-flow
+```
+
+## Troubleshooting
+
+<Accordion title="CANTON_CLIENT_SECRET is missing. Copy .env.server.example to .env.server.">
+  `.env.server` does not exist, or `CANTON_CLIENT_SECRET` is empty. Create the
+  file from `.env.server.example`, set the secret, and make sure the file sits
+  in `frontend/`, not in the repository root.
+</Accordion>
+
+<Accordion title="HTTP 403 or “Missing actAs rights”">
+  Your ledger user cannot submit commands as one of the demo parties. This is
+  the most common failure, and it often appears after you re-run
+  `allocate:parties`. Run `npm run grant:act-as` again. If it still fails,
+  check that `VITE_CANTON_USER_ID` in `.env` is the user linked to your
+  client credentials.
+</Accordion>
+
+<Accordion title="HTTP 401 or “Ledger authorization failed”">
+  The token was rejected. Tokens are short-lived, and the UI requests a new
+  one on the next action, so retry once. If it keeps failing, re-run
+  `npm run smoke:ledger` to confirm the secret and audience values.
+</Accordion>
+
+<Accordion title="“Network / proxy unreachable” or a CORS error in the browser console">
+  The browser is calling DevNet directly instead of going through
+  `/api/ledger`. Remove `VITE_LEDGER_PROXY=false` from `.env` if you set it,
+  and restart `npm run dev`.
+</Accordion>
+
+<Accordion title="“Party IDs not configured” or the badge shows “Live · parties not set”">
+  `VITE_PARTY_*` values are missing from `.env`. Run
+  `npm run allocate:parties`, then restart the dev server.
+</Accordion>
+
+<Accordion title="Step 5 returns HTTP 400. Is something broken?">
+  No. HTTP 400 with `DAML_FAILURE` on the second pledge means the
+  `Invoice already pledged` assertion fired and Canton rejected the
+  transaction. A *successful* second pledge would be the bug.
+</Accordion>
+
+<Accordion title="Everything worked yesterday and now every call fails">
+  DevNet can reset, which removes your parties and contracts. Re-run the
+  setup from `allocate:parties` through `create:financing`.
+</Accordion>
+
+## Next steps
+
+- Read the contracts in `daml/Financing.daml` to see how `PledgeRegistry`
+  rejects a duplicate pledge.
+- Run `daml test` from the repository root with Daml SDK 3.4.11 installed to
+  run the `testPrivacy` and `testFinancing` scripts in `daml/Test.daml`.

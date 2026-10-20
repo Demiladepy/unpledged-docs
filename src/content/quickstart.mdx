@@ -1,47 +1,124 @@
 ---
+lastVerified: 2026-10-20
 title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+description: Run Unpledged locally in mock mode, finance an invoice, and watch the ledger reject a second pledge of the same invoice.
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+In about five minutes you will run Unpledged on your machine, finance an
+invoice, and watch the ledger reject a second pledge of that same invoice.
+This path uses mock mode, so you don't need a Canton account or credentials.
 
 ## Before you begin
 
-List only the requirements needed for this workflow:
+- **Node.js 22 or later** with npm. Check with `node -v`. This guide was
+  tested with Node.js 22.20 and npm 11.6.
+- **Git**.
+- Port **5173** free on your machine.
 
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+## Run the app
 
 <Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
-
+  <Step title="Clone the repository">
     ```bash
-    npm install your-package
+    git clone https://github.com/Demiladepy/Unpledged.git
+    cd Unpledged/frontend
     ```
-  </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
 
-    ```bash
-    your-cli init
-    ```
+    All commands in this guide run from the `frontend` directory.
   </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
+  <Step title="Create your environment file">
+    <Tabs>
+      <Tab title="macOS / Linux">
+        ```bash
+        cp .env.example .env
+        ```
+      </Tab>
+      <Tab title="Windows PowerShell">
+        ```powershell
+        Copy-Item .env.example .env
+        ```
+      </Tab>
+    </Tabs>
 
-    ```bash
-    your-cli start
-    ```
+    The example file sets `VITE_USE_MOCKS=true`, so every ledger call is
+    answered from local mock data. You don't need to edit anything.
   </Step>
-  <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
+  <Step title="Install dependencies and start the dev server">
+    ```bash
+    npm install
+    npm run dev
+    ```
+
+    Vite prints `Local: http://localhost:5173/` when it is ready.
+  </Step>
+  <Step title="Open the app">
+    Go to [http://localhost:5173](http://localhost:5173). A **Mock mode**
+    badge appears in the header. The first page, **Privacy**, shows the same
+    invoice as seen by different parties.
   </Step>
 </Steps>
 
-## Choose the next task
+## Finance an invoice and try to pledge it twice
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+Select **Full flow** in the header. The page runs the whole lifecycle on a
+fresh invoice number, one step per button. Select each button in order:
+
+| Step | Button | What happens |
+| --- | --- | --- |
+| 1 | **Create invoice on DevNet** | The SME and the debtor co-sign a new `Invoice`. |
+| 2 | **Generate attestation** | The SME proves the invoice is unpledged to Lender A. The live privacy check shows **Lender A sees this attestation: YES** and **Lender B sees this attestation: NO**. |
+| 3 | **Create financing offer** | Lender A offers a 900.00 advance against the attestation. |
+| 4 | **Complete financing** | The SME accepts. The ledger records a `PledgeMarker` and the step shows **Funding succeeded**. |
+| 5 | **Attempt second pledge** | The SME tries to finance the same invoice again. |
+
+<Note type="info" title="Ignore the “Ledger call failed” banner in mock mode">
+  The Full flow page shows a **Ledger call failed** banner and a
+  “live financing writes are disabled” notice while mock mode is on. Both are
+  expected. The five steps still run against mock data.
+</Note>
+
+## Verify the result
+
+Step 5 must fail. That failure is the feature. You should see:
+
+```text
+FRAUD BLOCKED ON INVOICE YOU JUST FINANCED
+LEDGER RESPONSE · HTTP 400 · REJECTED
+"code": "DAML_FAILURE"
+```
+
+The heading **Full cycle complete on this invoice** appears above the steps.
+
+In the Daml model, `CompleteFinancing` calls `RecordPledge` on the SME's
+`PledgeRegistry`. The registry already holds this invoice's reference, so the
+`Invoice already pledged` assertion fails and the whole transaction is
+rejected.
+
+To see the privacy guarantee, go back to **Privacy** and switch **View as**
+between **Lender A** and **Lender B**. Lender A sees one attestation with
+summary fields only and zero invoices. Lender B sees zero contracts.
+
+## If something goes wrong
+
+<Accordion title="npm run dev fails with “Port 5173 is in use”">
+  Another process holds the port. Stop it, or run `npx vite --port 5174` and
+  open that port instead.
+</Accordion>
+
+<Accordion title="npm install fails with an engine or syntax error">
+  The frontend uses Vite 8, which needs a current Node.js release. Run
+  `node -v`, upgrade to Node.js 22 or later, delete `node_modules`, and run
+  `npm install` again.
+</Accordion>
+
+<Accordion title="The header shows “Live · parties not set” instead of Mock mode">
+  Your `.env` sets `VITE_USE_MOCKS=false`. Live mode needs DevNet credentials.
+  Set it back to `true` and restart `npm run dev`, because Vite reads `.env`
+  only at startup.
+</Accordion>
+
+## Next step
+
+You have seen the flow on mock data. To run the same five steps as real
+commands on a Canton participant, follow
+[Run Unpledged on Canton DevNet](/guides/run-on-devnet).

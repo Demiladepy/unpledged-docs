@@ -70,4 +70,37 @@ upgrade an existing site or move a production release pointer.
 
 ## Product context
 
-<!-- Add canonical terminology, audience details, and content boundaries here. -->
+Unpledged is a confidential receivables-financing app built with Daml on
+Canton. Source: https://github.com/Demiladepy/Unpledged.
+
+Audience: developers evaluating Canton or Daml, fintech engineers, and
+contributors. Assume Node.js and terminal skills; do not assume Daml skills.
+
+Canonical terms (use exactly):
+
+- **SME**: the business that owns the invoice and asks for financing.
+- **Debtor**: the customer who owes the invoice; co-signs `Invoice`.
+- **Lender A**: the lender that receives the attestation and finances.
+- **Lender B**: a competing lender that must see nothing.
+- **Unpledged attestation**: `UnpledgedAttestation`, a summary (count, total,
+  on-time flag) shared with one lender. Never call it a "proof of funds".
+- **Double pledge**: financing the same invoice twice. The ledger rejects it;
+  an HTTP 400 on the second pledge is the expected, successful outcome.
+- **Mock mode** (`VITE_USE_MOCKS=true`) and **live mode** (DevNet).
+
+Content boundaries:
+
+- The quickstart must stay credential-free (mock mode only).
+- Anything that needs `CANTON_CLIENT_SECRET` belongs in the DevNet guide.
+- Never show a real client secret, party ID, or token in examples.
+- Quote UI labels and script output exactly as the app prints them.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

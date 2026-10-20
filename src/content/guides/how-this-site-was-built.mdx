@@ -1,0 +1,266 @@
+---
+lastVerified: 2026-10-20
+title: How this site was built
+description: A step-by-step account of building and publishing this docs site with Thally, including four Windows problems and how each was fixed.
+---
+
+<Note type="info" title="Why this page is here">
+  This is the companion article for this site. It walks another developer
+  through building the same kind of site, using this one as the example.
+</Note>
+
+I wrote docs for [Unpledged](https://github.com/Demiladepy/Unpledged), an app
+I built that stops the same invoice from being used as loan collateral twice.
+I published them with [Thally](https://thally.io). The site has three pages:
+an introduction, a quickstart, and one practical guide.
+
+- Live site: [unpledged.thally.app](https://unpledged.thally.app)
+- Source: [github.com/Demiladepy/unpledged-docs](https://github.com/Demiladepy/unpledged-docs)
+
+This post shows you how to build the same kind of site for your own project.
+I'll also share the four problems I ran into and how I fixed each one, so you
+don't lose time on them.
+
+## What you need
+
+- A **Thally Cloud account** from [app.thally.io](https://app.thally.io). New
+  accounts get a 7-day free trial, which starts when you first click
+  **Publish site**.
+- A **GitHub account**. Thally creates and stores your docs there.
+- **Node.js 22 or newer** and **Git**, if you want to edit and preview the
+  site on your computer.
+- **A project that a stranger can run.** You'll test your quickstart on it.
+
+## Step 1: Decide what the reader will achieve first
+
+Before you open Thally, decide what a new reader will achieve in the first five
+minutes. This is the most important choice, because it shapes your quickstart.
+
+A good first result:
+
+- needs nothing the reader has to ask someone else for, like an API key
+- ends with something the reader can see
+- takes a few minutes, not an hour
+
+The full version of Unpledged connects to a Canton test network, and that
+needs a secret key. But the app also has a **mock mode** that uses fake data
+and needs no key. So my quickstart is: download the code, copy one settings
+file, run two commands, and click through five steps. In the last step the
+app tries to use the same invoice twice and gets **rejected**. That rejection
+is the feature working. The secret-key setup went into its own guide.
+
+**Test your steps in a fresh copy, not the folder you work in.** Your working
+folder has settings and tools a new reader won't have. I downloaded the
+project into an empty folder and followed my own steps exactly. That's how I
+found a scary-looking **"Ledger call failed"** message that appears in mock
+mode even though nothing is wrong. I added a note telling readers to ignore
+it. I'd never have noticed it from my own setup.
+
+## Step 2: Create the site in Thally Cloud
+
+1. Go to [app.thally.io](https://app.thally.io), sign in with GitHub, and
+   click **Create a site**.
+2. **Site details.** Enter a site name and a one-line summary (up to 240
+   characters). Thally suggests an address from the name, like
+   `unpledged.thally.app`, and checks that it's free.
+3. **Docs source.** Choose **Create a new docs repository**. Thally suggests
+   a repository name. Mine clashed with my app's repository (`Unpledged`), and
+   the wizard warned me, so I used `unpledged-docs`. **Private repository is
+   switched on by default.** Turn it off if you want people to read your
+   source.
+4. **Review and publish.** Check the details and click **Publish site**. Thally
+   creates the repository, and the Home page shows the first deployment while
+   it builds.
+
+The first time you connect GitHub, Thally asks you to install its GitHub App.
+To let it create a brand-new repository, give it access to **All
+repositories**.
+
+Two things to know before you start:
+
+- **The 7-day trial starts on your first publish, and you get one free site
+  after that.** My account already had an old test site from August that had
+  never published. Once the trial ended, the wizard said "Site capacity is
+  full", and I had to delete the old site before I could create this one.
+- **Thally's quickstart describes extra steps** (Product sources and Knowledge
+  surfaces). On my Free account the wizard had only three: Site details, Docs
+  source, and Review and publish.
+
+When the site shows as **Live**, you have a working site with sample pages
+and a GitHub repository that you own.
+
+## Step 3: Download the repository and find the three files that matter
+
+```bash
+git clone https://github.com/YOUR-NAME/YOUR-DOCS-REPO.git
+cd YOUR-DOCS-REPO
+npm install
+npm run dev
+```
+
+Open `http://localhost:3040` to see the site. You'll mostly change three
+things:
+
+| File | What it controls |
+| --- | --- |
+| `src/content/` | Your pages. One `.mdx` file per page. |
+| `docs.json` | The sidebar: which pages appear, in what order. |
+| `src/data/site.ts` | The site name, header links, and colours. |
+
+Also read `AGENTS.md`. It has writing tips and a list of files you shouldn't
+edit by hand.
+
+## Step 4: Set up the sidebar and branding
+
+I deleted the sample pages and set up one tab with two groups in `docs.json`:
+
+```json
+"tabs": [
+  {
+    "tab": "Docs",
+    "groups": [
+      { "group": "Get started", "pages": ["introduction", "quickstart"] },
+      { "group": "Guides", "pages": ["guides/run-on-devnet"] },
+      { "group": "Behind the docs", "pages": ["guides/how-this-site-was-built"] }
+    ]
+  }
+]
+```
+
+Each name in `pages` is a file path in `src/content/` without the `.mdx` at
+the end. If you forget to list a page here, it won't appear in the sidebar.
+
+For branding, I set the name, description, and links in `src/data/site.ts`
+and changed the accent colour to Unpledged's lime green, `#D4F35C`. I added a
+small logo as `public/brand/unpledged-mark.svg` and pointed to it from
+`docs.json`:
+
+```json
+"navbar": {
+  "logo": { "light": "/brand/unpledged-mark.svg", "dark": "/brand/unpledged-mark.svg" }
+},
+"favicon": { "light": "/brand/unpledged-mark.svg" }
+```
+
+## Step 5: Write the pages
+
+Pages are written in MDX, which is Markdown plus a few ready-made blocks.
+These are the ones I used:
+
+| Block | When I used it |
+| --- | --- |
+| `Steps` | Anything the reader does in order. One action per step, and each step says what you should see. |
+| `Tabs` | When a command is different on Mac and Windows. |
+| `Note` | The one thing the reader must not miss, like keeping a secret key out of the browser. |
+| `Accordion` | Troubleshooting. Each problem folds open, so the page stays short. |
+| `Hero` and `CardGroup` | The big banner and the two "where to start" cards on the home page. |
+
+Here's a short example:
+
+````mdx
+<Steps>
+  <Step title="Check that you can reach the ledger">
+    ```bash
+    npm run smoke:ledger
+    ```
+
+    You should see a line that starts with `access_token:`.
+  </Step>
+</Steps>
+
+<Accordion title="HTTP 403 or “Missing actAs rights”">
+  Run `npm run grant:act-as`, then try again.
+</Accordion>
+````
+
+Three habits made my pages better:
+
+1. **Use the real error message as the troubleshooting title.** People search
+   for the exact words on their screen. I ran my project's scripts with no
+   key on purpose, just to copy the real error text.
+2. **Show what success looks like.** "You should see `PASS: zero Invoice
+   nodes`" is easier to check than "make sure it worked".
+3. **Look at your app's own error handling.** Unpledged already had a file
+   that turns errors into hints. Each hint became a troubleshooting entry.
+
+## Step 6: Check, build, and publish
+
+Thally asks you to run two commands before you push:
+
+```bash
+npx --yes @thallylabs/cli@latest check
+npm run build
+```
+
+`check` looks for mistakes in your pages and settings. `build` makes the
+final site. If both pass, save and push your changes:
+
+```bash
+git add docs.json AGENTS.md public/brand src/content src/data/site.ts
+git commit -m "Add Unpledged docs"
+git push origin main
+```
+
+Thally sees the push and publishes the new version by itself. When it's done,
+refresh your `thally.app` address.
+
+Add only the files you changed. Problem 3 below explains why `git add .` can
+hurt you.
+
+## Problems I hit and how I fixed them
+
+I used Windows 11. Three of these four problems only happen on Windows.
+
+### 1. `check` fails with `'C:\Program' is not recognized`
+
+Both `npx @thallylabs/cli@latest check` and `npx thally check` stopped with
+this message. I looked inside the Thally CLI code and found the cause: it
+starts Node through the Windows shell without putting quotes around Node's
+location. Node usually lives in `C:\Program Files\nodejs`, and the shell
+breaks that path at the space.
+
+**Fix:** run the tool that `check` uses behind the scenes, directly:
+
+```bash
+npx create-thally-docs check
+```
+
+It printed `✅ No issues found.`
+
+### 2. `npm run build` crashes on Windows
+
+The build stopped with `thread 'main' has overflowed its stack`, then an
+"access violation" and advice to update Visual C++. I assumed my pages were
+the problem, so I removed all my changes and built Thally's untouched sample
+site. It crashed the same way. So it wasn't my content.
+
+**Fix:** build on Linux. I used WSL (the Linux that comes with Windows),
+copied the project there, and ran `npm install` and `npm run build`. It
+worked. Thally Cloud builds on Linux too, so your live site isn't affected.
+`npm run dev` still works on Windows for previewing.
+
+### 3. A Windows install breaks the build on Linux
+
+On Linux, `npm ci` failed with `Missing: @emnapi/runtime@1.11.3 from lock
+file`. Running `npm install` on Windows had changed `package-lock.json` and
+left out some Linux-only entries.
+
+**Fix:** don't commit `package-lock.json` after installing on Windows. Add
+only the files you meant to change.
+
+### 4. "Filename too long" when cloning
+
+Git on Windows can't handle very deep folder paths by default.
+
+**Fix:** work in a short folder like `C:\tmp`, or run
+`git config --global core.longpaths true`.
+
+## Before you share your site, check that:
+
+- [ ] A stranger can finish your quickstart with no secret keys.
+- [ ] Every step tells the reader what they should see.
+- [ ] Troubleshooting titles use real error messages.
+- [ ] Every page is listed in `docs.json`.
+- [ ] `check` and `build` pass (use WSL or Linux if you're on Windows).
+- [ ] You pushed only the files you meant to, and the live site shows your
+      changes.

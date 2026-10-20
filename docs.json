@@ -17,52 +17,95 @@
   },
   "navbar": {
     "primary": {
-      "label": "Get started",
+      "label": "Quickstart",
       "href": "/quickstart"
+    },
+    "logo": {
+      "light": "/brand/unpledged-mark.svg",
+      "dark": "/brand/unpledged-mark.svg"
     }
   },
   "tabs": [
     {
-      "tab": "Get started",
+      "tab": "Docs",
       "groups": [
         {
           "group": "Get started",
-          "pages": ["introduction", "quickstart"]
+          "pages": [
+            "introduction",
+            "quickstart"
+          ]
         },
         {
-          "group": "Design your docs",
-          "pages": ["components", "customization"]
-        }
-      ]
-    },
-    {
-      "tab": "Guides",
-      "groups": [
-        {
-          "group": "Work with Thally",
+          "group": "Guides",
           "pages": [
-            "guides/create-a-site",
-            "guides/work-with-the-cli",
-            "guides/connect-ai-tools"
+            "guides/run-on-devnet"
+          ]
+        },
+        {
+          "group": "Behind the docs",
+          "pages": [
+            "guides/how-this-site-was-built"
           ]
         }
       ]
-    },
-    {
-      "tab": "API Reference",
-      "groups": [
-        {
-          "group": "Overview",
-          "pages": ["api/introduction", "api/authentication"]
-        }
-      ],
-      "api": {
-        "source": "openapi.yaml"
-      }
-    },
-    {
-      "tab": "Changelog",
-      "href": "/changelog"
     }
-  ]
+  ],
+  "favicon": {
+    "light": "/brand/unpledged-mark.svg"
+  },
+  "readiness": {
+    "goldenQuestions": [
+      {
+        "question": "How do I run Unpledged locally without credentials?",
+        "expect": [
+          "/quickstart"
+        ]
+      },
+      {
+        "question": "What does mock mode do?",
+        "expect": [
+          "/quickstart",
+          "/introduction"
+        ]
+      },
+      {
+        "question": "How do I fix HTTP 403 missing actAs rights?",
+        "expect": [
+          "/guides/run-on-devnet"
+        ]
+      },
+      {
+        "question": "Where do I put CANTON_CLIENT_SECRET?",
+        "expect": [
+          "/guides/run-on-devnet"
+        ]
+      },
+      {
+        "question": "Why does the second pledge return HTTP 400?",
+        "expect": [
+          "/quickstart",
+          "/guides/run-on-devnet"
+        ]
+      },
+      {
+        "question": "How do I verify Lender A cannot see invoice data?",
+        "expect": [
+          "/guides/run-on-devnet"
+        ]
+      },
+      {
+        "question": "Who is Unpledged for?",
+        "expect": [
+          "/introduction"
+        ]
+      },
+      {
+        "question": "How was this docs site built with Thally?",
+        "expect": [
+          "/guides/how-this-site-was-built"
+        ]
+      }
+    ]
+  }
 }

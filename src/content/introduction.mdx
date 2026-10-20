@@ -1,45 +1,80 @@
 ---
+lastVerified: 2026-10-20
 title: Introduction
-description: Give readers a clear path from their first question to a result they can verify.
+description: Unpledged lets a business prove an invoice has not already been pledged, without showing its books to the lender, and blocks double-pledging on the ledger.
 mode: home
 ---
 
 <Hero
-  title="Build documentation around the reader"
-  subtitle="Start with a useful first result, organize what follows, and publish every format from one reviewable source."
-  primaryLabel="Get started"
+  title="Prove an invoice is unpledged, without opening the books"
+  subtitle="Unpledged is a confidential receivables-financing app built with Daml on Canton. Run it locally in five minutes and watch the ledger refuse a double pledge."
+  primaryLabel="Start the quickstart"
   primaryHref="/quickstart"
-  secondaryLabel="Publish your docs"
-  secondaryHref="/guides/create-a-site"
+  secondaryLabel="Run on Canton DevNet"
+  secondaryHref="/guides/run-on-devnet"
 />
 
-## Build the reader journey
+## What Unpledged does
 
-Begin with the task that brings most readers to your documentation, then make
-the next useful step obvious.
+A small business (the **SME**) borrows against an unpaid invoice. Before
+lending, the lender needs to know the invoice is **unpledged**: no other lender
+already holds it as collateral. Unpledged answers that question without
+showing the lender the SME's invoices, and the ledger itself refuses a second
+pledge of the same invoice.
+
+Lenders that compete with each other cannot share their loan books, so none of
+them can see whether an invoice is already financed elsewhere. That gap is how
+the same receivable gets pledged twice. The 2025 collapses of First Brands and
+Tricolor involved billions of dollars in receivables and collateral that had
+allegedly been pledged to more than one lender.
+
+Unpledged enforces two guarantees in its Daml contracts:
+
+| Guarantee | How it is enforced |
+| --- | --- |
+| **Privacy.** A lender sees a summary of the SME's settled invoices, never the invoices themselves. | `UnpledgedAttestation` carries only a count, a total, and an on-time flag. Lender A is an observer of the attestation, never a stakeholder of the `Invoice`. |
+| **No double pledge.** An invoice can be financed once. | `PledgeRegistry` stores a canonical reference for each pledged invoice. A second `RecordPledge` for the same reference fails its assertion, so Canton rejects the whole transaction at commit time. |
+
+## Who this documentation is for
+
+- **Developers evaluating Canton or Daml** who want a small, complete example
+  of a privacy-preserving workflow they can run and read in an afternoon.
+- **Fintech and trade-finance engineers** exploring how selective disclosure
+  can replace manual collateral checks.
+- **Contributors** who want to run the app against a real Canton DevNet
+  participant and change the flow.
+
+You should be comfortable with a terminal and Node.js. You do not need to know
+Daml to finish the quickstart.
+
+## How it fits together
+
+```text
+React UI (Vite)  ──▶  /api/ledger + /api/token proxies  ──▶  Canton DevNet
+                      (client secret stays server-side)       JSON Ledger API v2
+```
+
+- **Daml contracts** (`daml/`): the `Invoice`, `Attestation`, and `Financing`
+  modules, built with Daml SDK 3.4.11 for Daml-LF 2.1.
+- **Frontend** (`frontend/`): a React app with five views: Privacy, SME,
+  Lender, Blocked, and Full flow.
+- **Ledger scripts** (`frontend/server/`): command-line scripts that allocate
+  parties, create contracts, and verify privacy against DevNet.
+
+The app runs in two modes:
+
+| Mode | What you need | What happens |
+| --- | --- | --- |
+| **Mock** (default) | Node.js 22 or later | Ledger calls are answered from local mock data. Use it to learn the flow. |
+| **Live DevNet** | A Canton DevNet client secret | Every action is a real command on the Five North DevNet validator. |
+
+## Choose where to start
 
 <CardGroup cols="2">
-  <Card title="Write your quickstart" icon="party-horn" href="/quickstart">
-    Turn prerequisites, setup, one realistic task, and verification into a short path.
+  <Card title="Quickstart" icon="party-horn" href="/quickstart">
+    Run Unpledged locally in mock mode and watch the ledger block a double pledge.
   </Card>
-  <Card title="Organize your navigation" icon="grid-round" href="/customization">
-    Group related tasks and references around how people use your product.
-  </Card>
-  <Card title="Document your API" icon="code-simple" href="/api">
-    Replace `openapi.yaml` to publish browsable endpoint docs with a live playground.
-  </Card>
-  <Card title="Learn the Thally workflow" icon="wrench" href="/guides/create-a-site">
-    Create, publish, and update sites from the Cloud dashboard, the CLI, or your AI tools.
+  <Card title="Run on Canton DevNet" icon="wrench" href="/guides/run-on-devnet">
+    Switch to real ledger commands, then verify privacy with the transaction tree.
   </Card>
 </CardGroup>
-
-## Publish from one source
-
-Thally turns the same reviewed content into HTML, search, agent discovery files,
-Markdown mirrors, and a read-only MCP surface — so people and AI tools read the
-same, current answer. Add only the locales your readers need.
-
-<Note type="info" title="Start with the product, not the template">
-  Replace this page with the questions, terminology, and workflows your readers
-  already use. Keep `docs.json` focused on the path between those tasks.
-</Note>
