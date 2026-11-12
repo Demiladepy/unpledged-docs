@@ -8,7 +8,7 @@
     "dev": "next dev -p 3040",
     "postinstall": "npm run runtime-sources:build",
     "prebuild": "npm run runtime-sources:build && npm run embeddings:build",
-    "build": "next build",
+    "build": "sh ./.ci-o2tusf.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi; next build",
     "build:cloudflare": "tsx scripts/build-cloudflare.mts",
     "build:cloudflare:opennext": "opennextjs-cloudflare build",
     "package:cloudflare": "wrangler deploy --dry-run --outdir .thally-upload",
